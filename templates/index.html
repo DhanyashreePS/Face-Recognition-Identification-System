@@ -1,0 +1,315 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        header {
+            background: #1f2937;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 28px;
+        }
+
+        header p {
+            margin-top: 6px;
+            color: #d1d5db;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 30px auto;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+        }
+
+        .webcam-area {
+            text-align: center;
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 700px;
+            margin: auto;
+            background: #111827;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #videoFeed {
+            width: 100%;
+            display: block;
+            min-height: 350px;
+            object-fit: cover;
+        }
+
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 7px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #startBtn {
+            background: #2563eb;
+            color: white;
+        }
+
+        #stopBtn {
+            background: #dc2626;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .status span {
+            font-weight: bold;
+        }
+
+        .enrollment {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            font-size: 16px;
+        }
+
+        #enrollBtn {
+            background: #059669;
+            color: white;
+        }
+
+        .message {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .buttons {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .enrollment {
+                flex-direction: column;
+            }
+
+            input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Face Recognition Identification System</h1>
+        <p>Real-Time Face Detection and Identification</p>
+    </header>
+
+    <div class="container">
+
+        <!-- Webcam Section -->
+        <div class="card webcam-area">
+
+            <h2>Live Face Recognition</h2>
+
+            <div class="video-container">
+                <img id="videoFeed" src="" alt="Webcam feed">
+            </div>
+
+            <div class="buttons">
+                <button id="startBtn" onclick="startCamera()">
+                    Start Camera
+                </button>
+
+                <button id="stopBtn" onclick="stopCamera()" disabled>
+                    Stop Camera
+                </button>
+            </div>
+
+            <div class="status">
+                Status:
+                <span id="statusText">Camera stopped</span>
+            </div>
+
+        </div>
+
+
+        <!-- Enrollment Section -->
+        <div class="card">
+
+            <h2>Enroll New Person</h2>
+
+            <div class="enrollment">
+
+                <input
+                    type="text"
+                    id="personName"
+                    placeholder="Enter person's name"
+                >
+
+                <button id="enrollBtn" onclick="enrollPerson()">
+                    Enroll Person
+                </button>
+
+            </div>
+
+            <div class="message" id="enrollMessage"></div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        const videoFeed = document.getElementById("videoFeed");
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+        const statusText = document.getElementById("statusText");
+
+
+        function startCamera() {
+
+            // Flask webcam streaming endpoint
+            videoFeed.src = "/video_feed";
+
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            statusText.textContent = "Camera running...";
+        }
+
+
+        function stopCamera() {
+
+            // Stop displaying the stream
+            videoFeed.src = "";
+
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+
+            statusText.textContent = "Camera stopped";
+        }
+
+
+        async function enrollPerson() {
+
+            const name = document.getElementById("personName").value.trim();
+            const message = document.getElementById("enrollMessage");
+
+            if (name === "") {
+                message.textContent = "Please enter a name.";
+                return;
+            }
+
+            message.textContent = "Capturing face...";
+
+            try {
+
+                const response = await fetch("/enroll", {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        name: name
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    message.textContent =
+                        "Person enrolled successfully: " + name;
+
+                    document.getElementById("personName").value = "";
+                }
+                else {
+                    message.textContent =
+                        result.message || "Enrollment failed.";
+                }
+
+            }
+            catch (error) {
+
+                message.textContent =
+                    "Unable to connect to the server.";
+
+                console.error(error);
+            }
+        }
+
+    </script>
+
+</body>
+</html>
